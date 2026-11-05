@@ -1,0 +1,67 @@
+package main
+
+import (
+	"errors"
+	"log"
+
+	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/logger"
+	recoverer "github.com/gofiber/fiber/v3/middleware/recover"
+	"github.com/gofiber/fiber/v3/middleware/requestid"
+
+	"latihan-fiber-api/internal/config"
+	"latihan-fiber-api/internal/middleware"
+	"latihan-fiber-api/internal/router"
+)
+
+func main() {
+	konf := config.Muat()
+	if err := config.HubungkanBasisData(konf); err != nil {
+		log.Fatal("Gagal terhubung ke basis data: ", err)
+	}
+	if err := config.Migrasi(); err != nil {
+		log.Fatal("Gagal menjalankan migrasi: ", err)
+	}
+	if err := config.DataAwal(); err != nil {
+		log.Fatal("Gagal membuat data awal: ", err)
+	}
+
+	app := fiber.New(fiber.Config{
+		AppName:      konf.NamaAplikasi,
+		ErrorHandler: penanganGalat,
+	})
+
+	app.Use(requestid.New())
+	app.Use(logger.New())
+	app.Use(recoverer.New())
+	app.Use(middleware.WaktuProses())
+
+	router.Daftarkan(app)
+
+	// Menangani semua permintaan yang tidak cocok dengan rute.
+	app.Use(func(c fiber.Ctx) error {
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"sukses": false,
+			"pesan":  "Endpoint tidak tersedia",
+		})
+	})
+
+	log.Fatal(app.Listen(":" + konf.Port))
+}
+
+func penanganGalat(c fiber.Ctx, err error) error {
+	kode := fiber.StatusInternalServerError
+	pesan := "Terjadi kesalahan pada server"
+
+	var galatFiber *fiber.Error
+
+	if errors.As(err, &galatFiber) {
+		kode = galatFiber.Code
+		pesan = galatFiber.Message
+	}
+
+	return c.Status(kode).JSON(fiber.Map{
+		"sukses": false,
+		"pesan":  pesan,
+	})
+}
