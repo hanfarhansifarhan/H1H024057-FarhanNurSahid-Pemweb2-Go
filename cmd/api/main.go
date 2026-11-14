@@ -54,10 +54,14 @@ func penanganGalat(c fiber.Ctx, err error) error {
 	pesan := "Terjadi kesalahan pada server"
 
 	var galatFiber *fiber.Error
-
 	if errors.As(err, &galatFiber) {
 		kode = galatFiber.Code
 		pesan = galatFiber.Message
+	}
+
+	if kode >= fiber.StatusInternalServerError {
+		log.Println("Error server:", err)
+		pesan = "Terjadi kesalahan pada server"
 	}
 
 	return c.Status(kode).JSON(fiber.Map{

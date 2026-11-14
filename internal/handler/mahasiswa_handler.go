@@ -10,6 +10,7 @@ import (
 
 	"latihan-fiber-api/internal/model"
 	"latihan-fiber-api/internal/service"
+	"latihan-fiber-api/internal/validasi"
 )
 
 func DaftarMahasiswa(c fiber.Ctx) error {
@@ -103,6 +104,14 @@ func BuatMahasiswa(c fiber.Ctx) error {
 		)
 	}
 
+	if galat := validasi.Periksa(permintaan); len(galat) > 0 {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"sukses": false,
+			"pesan":  "Data yang dikirim tidak valid",
+			"galat":  galat,
+		})
+	}
+
 	aktif := true
 
 	if permintaan.Aktif != nil {
@@ -156,7 +165,7 @@ func PerbaruiMahasiswa(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusInternalServerError, "Gagal mengambil data")
 	}
 
-	var permintaan PermintaanMahasiswa
+	var permintaan PermintaanPembaruanMahasiswa
 
 	if err := c.Bind().Body(&permintaan); err != nil {
 		return fiber.NewError(
@@ -165,24 +174,31 @@ func PerbaruiMahasiswa(c fiber.Ctx) error {
 		)
 	}
 
-	if permintaan.Nama != "" {
-		mahasiswa.Nama = permintaan.Nama
+	if galat := validasi.Periksa(permintaan); len(galat) > 0 {
+		return c.Status(fiber.StatusUnprocessableEntity).JSON(fiber.Map{
+			"sukses": false,
+			"pesan":  "Data yang dikirim tidak valid",
+			"galat":  galat,
+		})
 	}
 
-	if permintaan.Email != "" {
-		mahasiswa.Email = permintaan.Email
+	if permintaan.Nim != nil {
+		mahasiswa.Nim = *permintaan.Nim
 	}
-
-	if permintaan.Angkatan > 0 {
-		mahasiswa.Angkatan = permintaan.Angkatan
+	if permintaan.Nama != nil {
+		mahasiswa.Nama = *permintaan.Nama
 	}
-
-	if permintaan.Ipk > 0 {
-		mahasiswa.Ipk = permintaan.Ipk
+	if permintaan.Email != nil {
+		mahasiswa.Email = *permintaan.Email
 	}
-
-	if permintaan.ProgramStudiID > 0 {
-		mahasiswa.ProgramStudiID = permintaan.ProgramStudiID
+	if permintaan.Angkatan != nil {
+		mahasiswa.Angkatan = *permintaan.Angkatan
+	}
+	if permintaan.Ipk != nil {
+		mahasiswa.Ipk = *permintaan.Ipk
+	}
+	if permintaan.ProgramStudiID != nil {
+		mahasiswa.ProgramStudiID = *permintaan.ProgramStudiID
 	}
 
 	if permintaan.Aktif != nil {
