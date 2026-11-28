@@ -91,12 +91,43 @@
   border-bottom: 1px solid #e8ecf3;
 }
 
-.mahasiswa-add summary {
+.mahasiswa-add summary,
+.mahasiswa-edit summary {
   width: fit-content;
   color: #234b99;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
+}
+
+.mahasiswa-edit {
+  margin-bottom: 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e8ecf3;
+}
+
+.mahasiswa-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mahasiswa-cancel {
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid #cbd4e1;
+  border-radius: 7px;
+  color: #34445f;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mahasiswa-cancel:disabled {
+  cursor: wait;
+  opacity: 0.72;
 }
 
 .mahasiswa-form {
@@ -312,16 +343,43 @@
   cursor: not-allowed;
 }
 
+.mahasiswa-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mahasiswa-edit-button,
 .mahasiswa-delete {
   padding: 7px 10px;
-  border: 1px solid #eccaca;
   border-radius: 7px;
-  color: #a32121;
-  background: #fff;
   font: inherit;
   font-size: 12px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.mahasiswa-edit-button {
+  border: 1px solid #c7d2eb;
+  color: #234b99;
+  background: #fff;
+}
+
+.mahasiswa-edit-button:hover:not(:disabled) {
+  border-color: #3159a8;
+  background: #f4f7ff;
+}
+
+.mahasiswa-edit-button:disabled,
+.mahasiswa-delete:disabled {
+  color: #9aa5b7;
+  cursor: wait;
+}
+
+.mahasiswa-delete {
+  border: 1px solid #eccaca;
+  color: #a32121;
+  background: #fff;
 }
 
 .mahasiswa-delete:hover:not(:disabled) {

@@ -1,0 +1,21 @@
+[Unit]
+Description=Pemweb2 Fiber API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pemweb2
+Group=pemweb2
+WorkingDirectory=/opt/pemweb2/fiber-api
+EnvironmentFile=/etc/pemweb2/fiber-api.env
+ExecStart=/opt/pemweb2/fiber-api/api
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+
+[Install]
+WantedBy=multi-user.target

@@ -18,11 +18,11 @@ Laravel memerlukan konfigurasi database dan data pengguna yang sudah tersedia.
 ### Fiber
 
 ```powershell
-Set-Location 'D:\kuliah\Pemweb2\latihan-fiber-api'
+Set-Location 'D:\kuliah\Pemweb2'
 go run ./cmd/api
 ```
 
-Fiber memerlukan konfigurasi database pada `.env`; proses startup menjalankan migrasi dan data awal.
+Gunakan modul Fiber pada root karena pengujian, build, dan GitHub Actions Modul 10 mengacu pada `go.mod` root. Fiber memerlukan konfigurasi database pada `.env`; proses startup menjalankan migrasi dan data awal.
 
 ### Frontend
 
@@ -36,13 +36,13 @@ Buka URL yang ditampilkan Vite, biasanya `http://localhost:5173`.
 
 ## Mengganti backend
 
-Di `.env`, ubah hanya `VITE_API_BACKEND`:
+Salin `.env.example` menjadi `.env` untuk pengembangan lokal, lalu pilih backend:
 
 ```dotenv
 VITE_API_BACKEND=laravel
 ```
 
-Gunakan `laravel` atau `fiber`, lalu mulai ulang server Vite. URL kedua backend disimpan masing-masing pada `VITE_API_LARAVEL` dan `VITE_API_FIBER`. `src/api/kontrak.js` menyatukan perbedaan request, response, pagination, dan galat.
+Gunakan `laravel` atau `fiber`, lalu mulai ulang server Vite. URL kedua backend disimpan masing-masing pada `VITE_API_LARAVEL` dan `VITE_API_FIBER`. `src/api/kontrak.js` menyatukan perbedaan request, response, pagination, dan galat. Build produksi memakai URL relatif `/laravel/api` dan `/fiber/api` dari `.env.production`, sehingga dapat dilayani bersama melalui Nginx tanpa menetapkan IP server.
 
 ## Ringkasan endpoint yang digunakan
 
@@ -56,7 +56,7 @@ Gunakan `laravel` atau `fiber`, lalu mulai ulang server Vite. URL kedua backend 
 | Tambah mahasiswa | `POST /api/mahasiswa` | `POST /api/mahasiswa` |
 | Hapus mahasiswa | `DELETE /api/mahasiswa/{id}` | `DELETE /api/mahasiswa/{id}` |
 
-Semua endpoint selain login memerlukan token Bearer. Izin tulis berbeda: Laravel memberikan ability tulis kepada admin, Fiber mengizinkan admin/dosen menambah atau mengubah, sementara hapus hanya admin.
+Endpoint mahasiswa memerlukan token Bearer. Izin tulisnya berbeda: Laravel memeriksa ability `mahasiswa:tulis`; Fiber mengizinkan admin/dosen menambah atau mengubah dan hanya admin menghapus. Endpoint matakuliah Fiber juga memakai `X-Api-Key`; operasi tulisnya memerlukan API key dan token Bearer dengan peran yang sesuai. Daftar program studi Fiber memakai API key saja. Laravel membatasi endpoint tulis matakuliah dengan ability yang sama.
 
 ## Perbandingan kontrak API
 

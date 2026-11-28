@@ -1,8 +1,33 @@
+
+# Environment
 .env
 .env.*
 !.env.example
+
+# Go
 *.exe
 *.test
 coverage.out
+/bin/api
+
+# Dependencies
 /vendor/
-/.idea/
+node_modules/
+
+# IDE
+.idea/
+.vscode/
+
+# Deployment artifacts
+*.zip
+*.tar
+*.tar.gz
+
+# Backup and temporary folders
+latihan-laravel-backup/
+
+
+dasar-go/
+latihan-fiber-api/
+
+frontend-pemweb2/latihan-fiber-api.code-workspace

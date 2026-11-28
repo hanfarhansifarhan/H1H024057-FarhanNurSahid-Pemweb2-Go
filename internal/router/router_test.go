@@ -61,6 +61,64 @@ func TestAuthPublicRoutesDoNotRequireAPIKey(t *testing.T) {
 	}
 }
 
+func TestStatusRouteIsPublic(t *testing.T) {
+	app := fiber.New()
+	Daftarkan(app)
+
+	response, err := app.Test(httptest.NewRequest(http.MethodGet, "/api/status", nil))
+	if err != nil {
+		t.Fatalf("gagal menjalankan request: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusOK {
+		t.Fatalf("status = %d, diharapkan %d", response.StatusCode, fiber.StatusOK)
+	}
+}
+
+func TestLoginIsRateLimited(t *testing.T) {
+	app := fiber.New()
+	Daftarkan(app)
+
+	for attempt := 1; attempt <= 6; attempt++ {
+		request := httptest.NewRequest(http.MethodPost, "/api/auth/login", strings.NewReader(`{}`))
+		request.Header.Set("Content-Type", "application/json")
+		response, err := app.Test(request)
+		if err != nil {
+			t.Fatalf("gagal menjalankan percobaan ke-%d: %v", attempt, err)
+		}
+		response.Body.Close()
+
+		expected := fiber.StatusUnprocessableEntity
+		if attempt == 6 {
+			expected = fiber.StatusTooManyRequests
+		}
+		if response.StatusCode != expected {
+			t.Fatalf("percobaan ke-%d: status = %d, diharapkan %d", attempt, response.StatusCode, expected)
+		}
+	}
+}
+
+func TestMatakuliahWritesRequireBearerTokenWithAPIKey(t *testing.T) {
+	t.Setenv("API_KEY", "test-api-key")
+
+	app := fiber.New()
+	Daftarkan(app)
+
+	request := httptest.NewRequest(http.MethodPost, "/api/matakuliah/", strings.NewReader(`{}`))
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("X-Api-Key", "test-api-key")
+	response, err := app.Test(request)
+	if err != nil {
+		t.Fatalf("gagal menjalankan request: %v", err)
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != fiber.StatusUnauthorized {
+		t.Fatalf("status = %d, diharapkan %d", response.StatusCode, fiber.StatusUnauthorized)
+	}
+}
+
 func TestLegacyRoutesRequireAPIKeyEvenWithBearerHeader(t *testing.T) {
 	t.Setenv("API_KEY", "test-api-key")
 

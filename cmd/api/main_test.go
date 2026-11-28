@@ -44,3 +44,50 @@ func TestPenanganGalatTidakMembocorkanDetailInternal(t *testing.T) {
 		t.Fatalf("struktur respons error tidak sesuai: %v", result)
 	}
 }
+
+func TestCorsMembatasiOriginSesuaiKonfigurasi(t *testing.T) {
+	t.Setenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173")
+
+	handler, err := buatCorsMiddleware()
+	if err != nil {
+		t.Fatalf("gagal membuat middleware CORS: %v", err)
+	}
+
+	app := fiber.New()
+	app.Use(handler)
+	app.Get("/status", func(c fiber.Ctx) error {
+		return c.SendStatus(fiber.StatusOK)
+	})
+
+	tests := []struct {
+		name          string
+		origin        string
+		allowedOrigin string
+	}{
+		{
+			name:          "allowed origin",
+			origin:        "http://localhost:5173",
+			allowedOrigin: "http://localhost:5173",
+		},
+		{
+			name:   "unlisted origin",
+			origin: "http://127.0.0.1:5173",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/status", nil)
+			request.Header.Set("Origin", tt.origin)
+			response, err := app.Test(request)
+			if err != nil {
+				t.Fatalf("gagal menjalankan request: %v", err)
+			}
+			defer response.Body.Close()
+
+			if got := response.Header.Get(fiber.HeaderAccessControlAllowOrigin); got != tt.allowedOrigin {
+				t.Fatalf("Access-Control-Allow-Origin = %q, diharapkan %q", got, tt.allowedOrigin)
+			}
+		})
+	}
+}

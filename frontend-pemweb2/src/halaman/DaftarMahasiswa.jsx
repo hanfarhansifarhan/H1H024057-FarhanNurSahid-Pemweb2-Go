@@ -4,7 +4,9 @@ import { normalisasiGalatApi } from '../api/kontrak.js'
 import { logout } from '../api/layananAuth.js'
 import {
   ambilDaftarMahasiswa,
+  ambilDetailMahasiswa,
   hapusMahasiswa,
+  perbaruiMahasiswa,
   tambahMahasiswa,
 } from '../api/layananMahasiswa.js'
 import './DaftarMahasiswa.css'
@@ -42,6 +44,12 @@ function DaftarMahasiswa() {
   const [galatTambah, setGalatTambah] = useState({})
   const [pesanAksi, setPesanAksi] = useState('')
   const [idMenghapus, setIdMenghapus] = useState(null)
+  const [idMengedit, setIdMengedit] = useState(null)
+  const [idMembukaEdit, setIdMembukaEdit] = useState(null)
+  const [formEdit, setFormEdit] = useState(FORM_AWAL)
+  const [sedangMengedit, setSedangMengedit] = useState(false)
+  const [pesanEdit, setPesanEdit] = useState('')
+  const [galatEdit, setGalatEdit] = useState({})
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -110,6 +118,79 @@ function DaftarMahasiswa() {
 
   function galatField(field) {
     return galatTambah[field]?.[0]
+  }
+
+  function galatFieldEdit(field) {
+    return galatEdit[field]?.[0]
+  }
+
+  function ubahFormEdit(field, value) {
+    setFormEdit((sebelumnya) => ({ ...sebelumnya, [field]: value }))
+    setGalatEdit((sebelumnya) => ({ ...sebelumnya, [field]: undefined }))
+    setPesanEdit('')
+  }
+
+  async function mulaiEdit(data) {
+    setIdMembukaEdit(data.id)
+    setPesanGalat('')
+    setPesanAksi('')
+
+    try {
+      const detail = await ambilDetailMahasiswa(data.id)
+      setIdMengedit(detail.id)
+      setFormEdit({
+        program_studi_id: String(detail.program_studi_id ?? detail.program_studi?.id ?? ''),
+        nim: detail.nim ?? '',
+        nama: detail.nama ?? '',
+        email: detail.email ?? '',
+        angkatan: String(detail.angkatan ?? ''),
+        ipk: String(detail.ipk ?? ''),
+      })
+      setPesanEdit('')
+      setGalatEdit({})
+    } catch (error) {
+      setPesanGalat(normalisasiGalatApi(error).message)
+    } finally {
+      setIdMembukaEdit(null)
+    }
+  }
+
+  function batalEdit() {
+    setIdMengedit(null)
+    setFormEdit(FORM_AWAL)
+    setPesanEdit('')
+    setGalatEdit({})
+  }
+
+  async function tanganiEdit(event) {
+    event.preventDefault()
+    setSedangMengedit(true)
+    setPesanEdit('')
+    setGalatEdit({})
+    setPesanAksi('')
+
+    try {
+      await perbaruiMahasiswa(idMengedit, {
+        program_studi_id: Number(formEdit.program_studi_id),
+        nim: formEdit.nim,
+        nama: formEdit.nama,
+        email: formEdit.email,
+        angkatan: Number(formEdit.angkatan),
+        ipk: Number(formEdit.ipk),
+      })
+      setPesanAksi('Data mahasiswa berhasil diperbarui.')
+      setPesanGalat('')
+      setIdMengedit(null)
+      setFormEdit(FORM_AWAL)
+      setHalaman(1)
+      setPembaruanDaftar((nilai) => nilai + 1)
+    } catch (error) {
+      const galat = normalisasiGalatApi(error)
+      setPesanEdit(galat.message)
+      setGalatEdit(galat.fieldErrors)
+    } finally {
+      setSedangMengedit(false)
+    }
   }
 
   async function tanganiTambah(event) {
@@ -349,6 +430,156 @@ function DaftarMahasiswa() {
           </form>
         </details>
 
+        {idMengedit && (
+          <details className="mahasiswa-edit" open>
+            <summary>Edit mahasiswa</summary>
+            <form className="mahasiswa-form" onSubmit={tanganiEdit}>
+              <div className="mahasiswa-form-grid">
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-program-studi">ID Program Studi</label>
+                  <input
+                    id="edit-program-studi"
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={formEdit.program_studi_id}
+                    onChange={(event) => ubahFormEdit('program_studi_id', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('program_studi_id'))}
+                    aria-describedby={galatFieldEdit('program_studi_id') ? 'galat-edit-program-studi' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('program_studi_id') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-program-studi">
+                      {galatFieldEdit('program_studi_id')}
+                    </p>
+                  )}
+                </div>
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-nim">NIM</label>
+                  <input
+                    id="edit-nim"
+                    type="text"
+                    minLength="5"
+                    maxLength="20"
+                    value={formEdit.nim}
+                    onChange={(event) => ubahFormEdit('nim', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('nim'))}
+                    aria-describedby={galatFieldEdit('nim') ? 'galat-edit-nim' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('nim') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-nim">
+                      {galatFieldEdit('nim')}
+                    </p>
+                  )}
+                </div>
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-nama">Nama</label>
+                  <input
+                    id="edit-nama"
+                    type="text"
+                    minLength="3"
+                    maxLength="100"
+                    value={formEdit.nama}
+                    onChange={(event) => ubahFormEdit('nama', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('nama'))}
+                    aria-describedby={galatFieldEdit('nama') ? 'galat-edit-nama' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('nama') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-nama">
+                      {galatFieldEdit('nama')}
+                    </p>
+                  )}
+                </div>
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-email">Email</label>
+                  <input
+                    id="edit-email"
+                    type="email"
+                    maxLength="100"
+                    value={formEdit.email}
+                    onChange={(event) => ubahFormEdit('email', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('email'))}
+                    aria-describedby={galatFieldEdit('email') ? 'galat-edit-email' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('email') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-email">
+                      {galatFieldEdit('email')}
+                    </p>
+                  )}
+                </div>
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-angkatan">Angkatan</label>
+                  <input
+                    id="edit-angkatan"
+                    type="number"
+                    min="2000"
+                    max="2100"
+                    step="1"
+                    value={formEdit.angkatan}
+                    onChange={(event) => ubahFormEdit('angkatan', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('angkatan'))}
+                    aria-describedby={galatFieldEdit('angkatan') ? 'galat-edit-angkatan' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('angkatan') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-angkatan">
+                      {galatFieldEdit('angkatan')}
+                    </p>
+                  )}
+                </div>
+                <div className="mahasiswa-form-field">
+                  <label htmlFor="edit-ipk">IPK</label>
+                  <input
+                    id="edit-ipk"
+                    type="number"
+                    min="0"
+                    max="4"
+                    step="0.01"
+                    value={formEdit.ipk}
+                    onChange={(event) => ubahFormEdit('ipk', event.target.value)}
+                    aria-invalid={Boolean(galatFieldEdit('ipk'))}
+                    aria-describedby={galatFieldEdit('ipk') ? 'galat-edit-ipk' : undefined}
+                    required
+                    disabled={sedangMengedit}
+                  />
+                  {galatFieldEdit('ipk') && (
+                    <p className="mahasiswa-field-error" id="galat-edit-ipk">
+                      {galatFieldEdit('ipk')}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {pesanEdit && (
+                <p className="mahasiswa-form-error" role="alert">
+                  {pesanEdit}
+                </p>
+              )}
+              <div className="mahasiswa-edit-actions">
+                <button className="mahasiswa-submit" type="submit" disabled={sedangMengedit}>
+                  {sedangMengedit ? 'Memproses...' : 'Simpan Perubahan'}
+                </button>
+                <button
+                  className="mahasiswa-cancel"
+                  type="button"
+                  onClick={batalEdit}
+                  disabled={sedangMengedit}
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </details>
+        )}
+
         <label className="mahasiswa-search-label" htmlFor="cari-mahasiswa">
           Pencarian
         </label>
@@ -403,14 +634,24 @@ function DaftarMahasiswa() {
                       <td>{data.angkatan}</td>
                       <td>{Number(data.ipk).toFixed(2)}</td>
                       <td>
-                        <button
-                          className="mahasiswa-delete"
-                          type="button"
-                          onClick={() => tanganiHapus(data)}
-                          disabled={idMenghapus !== null}
-                        >
-                          {idMenghapus === data.id ? 'Menghapus...' : 'Hapus'}
-                        </button>
+                        <div className="mahasiswa-actions">
+                          <button
+                            className="mahasiswa-edit-button"
+                            type="button"
+                            onClick={() => mulaiEdit(data)}
+                            disabled={idMembukaEdit !== null || idMenghapus !== null}
+                          >
+                            {idMembukaEdit === data.id ? 'Memuat...' : 'Edit'}
+                          </button>
+                          <button
+                            className="mahasiswa-delete"
+                            type="button"
+                            onClick={() => tanganiHapus(data)}
+                            disabled={idMenghapus !== null || idMembukaEdit !== null}
+                          >
+                            {idMenghapus === data.id ? 'Menghapus...' : 'Hapus'}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

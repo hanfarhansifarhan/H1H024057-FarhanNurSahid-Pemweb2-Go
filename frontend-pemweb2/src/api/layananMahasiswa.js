@@ -33,6 +33,11 @@ export async function tambahMahasiswa(mahasiswa) {
   return normalisasiDetailMahasiswa(data)
 }
 
+export async function perbaruiMahasiswa(id, mahasiswa) {
+  const { data } = await klien.put(`/mahasiswa/${encodeURIComponent(id)}`, mahasiswa)
+  return normalisasiDetailMahasiswa(data)
+}
+
 export async function hapusMahasiswa(id) {
   const { data } = await klien.delete(`/mahasiswa/${encodeURIComponent(id)}`)
   return data

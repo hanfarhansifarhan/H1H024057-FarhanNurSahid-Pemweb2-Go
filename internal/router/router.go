@@ -1,7 +1,10 @@
 package router
 
 import (
+	"time"
+
 	"github.com/gofiber/fiber/v3"
+	"github.com/gofiber/fiber/v3/middleware/limiter"
 
 	"latihan-fiber-api/internal/handler"
 	"latihan-fiber-api/internal/middleware"
@@ -9,8 +12,18 @@ import (
 
 func Daftarkan(app *fiber.App) {
 	api := app.Group("/api")
+	api.Get("/status", handler.Status)
 	api.Post("/auth/registrasi", handler.Registrasi)
-	api.Post("/auth/login", handler.Login)
+	api.Post("/auth/login", limiter.New(limiter.Config{
+		Max:        5,
+		Expiration: time.Minute,
+		LimitReached: func(c fiber.Ctx) error {
+			return c.Status(fiber.StatusTooManyRequests).JSON(fiber.Map{
+				"sukses": false,
+				"pesan":  "Terlalu banyak percobaan login",
+			})
+		},
+	}), handler.Login)
 
 	authBerlindung := api.Group("/auth", middleware.Autentikasi())
 	authBerlindung.Get("/profil", handler.Profil)
@@ -27,10 +40,10 @@ func Daftarkan(app *fiber.App) {
 
 	matakuliah := api.Group("/matakuliah", middleware.KunciApi())
 	matakuliah.Get("/", handler.DaftarMatakuliah)
-	matakuliah.Post("/", handler.BuatMatakuliah)
 	matakuliah.Get("/:id", handler.DetailMatakuliah)
-	matakuliah.Put("/:id", handler.PerbaruiMatakuliah)
-	matakuliah.Delete("/:id", handler.HapusMatakuliah)
+	matakuliah.Post("/", middleware.Autentikasi(), middleware.HanyaPeran("admin", "dosen"), handler.BuatMatakuliah)
+	matakuliah.Put("/:id", middleware.Autentikasi(), middleware.HanyaPeran("admin", "dosen"), handler.PerbaruiMatakuliah)
+	matakuliah.Delete("/:id", middleware.Autentikasi(), middleware.HanyaPeran("admin"), handler.HapusMatakuliah)
 
 	api.Get("/program-studi", middleware.KunciApi(), handler.DaftarProgramStudi)
 }

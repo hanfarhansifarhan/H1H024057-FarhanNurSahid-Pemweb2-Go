@@ -1,0 +1,21 @@
+[Unit]
+Description=Pemweb2 Laravel API (praktikum)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/pemweb2/laravel
+ExecStart=/usr/bin/php artisan serve --host=127.0.0.1 --port=8000
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/pemweb2/laravel/storage /opt/pemweb2/laravel/bootstrap/cache
+
+[Install]
+WantedBy=multi-user.target
